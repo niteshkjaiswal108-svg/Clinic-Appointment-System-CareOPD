@@ -1,29 +1,29 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { AppContext } from '../context/AppContext'
-import axios from 'axios'
-import { toast } from 'react-toastify'
+import React, { useContext, useEffect, useState } from "react";
+import { AppContext } from "../context/AppContext";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const MyAppointments = () => {
-  const { backendUrl, token, currencySymbol } = useContext(AppContext)
-  const [appointments, setAppointments] = useState([])
+  const { backendUrl, token, currencySymbol } = useContext(AppContext);
+  const [appointments, setAppointments] = useState([]);
 
-  const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov']
+  const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
 
   const slotDateFormat = (slotDate) => {
-    const dateArray = slotDate.split('_')
-    return `${dateArray[0]} ${months[Number(dateArray[1])]} ${dateArray[2]}`
-  }
+    const d = slotDate.split("_");
+    return `${d[0]} ${months[Number(d[1])]} ${d[2]}`;
+  };
 
   const getUserAppointments = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/user/appointments`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (data.success) setAppointments(data.appointments.reverse())
-    } catch (error) {
-      toast.error(error.message)
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data.success) setAppointments(data.appointments.reverse());
+    } catch (err) {
+      toast.error(err.message);
     }
-  }
+  };
 
   const cancelAppointment = async (appointmentId) => {
     try {
@@ -31,104 +31,121 @@ const MyAppointments = () => {
         `${backendUrl}/api/user/cancel-appointment`,
         { appointmentId },
         { headers: { Authorization: `Bearer ${token}` } }
-      )
+      );
+
       if (data.success) {
-        toast.success(data.message)
-        getUserAppointments()
-      } else toast.error(data.message)
-    } catch (error) {
-      toast.error(error.message)
+        toast.success(data.message);
+        getUserAppointments();
+      } else toast.error(data.message);
+    } catch (err) {
+      toast.error(err.message);
     }
-  }
+  };
 
   useEffect(() => {
-    if (token) getUserAppointments()
-  }, [token])
+    if (token) getUserAppointments();
+  }, [token]);
 
   return (
-    <section className="w-full min-h-screen pt-36 pb-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="w-full min-h-screen bg-gray-50 pt-28 pb-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
-        {/* Heading */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-12">
-          My Appointments
-        </h1>
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900">
+            My Appointments
+          </h1>
+          <p className="text-gray-500 mt-2">
+            View and manage your upcoming and past consultations
+          </p>
+        </div>
 
-        <div className="space-y-8">
+        {/* Empty State */}
+        {appointments.length === 0 && (
+          <div className="bg-white rounded-2xl p-10 text-center border border-gray-200">
+            <p className="text-gray-600 text-lg">No appointments found</p>
+          </div>
+        )}
+
+        {/* Appointment Cards */}
+        <div className="space-y-6">
           {appointments.map((item, index) => (
             <div
               key={index}
-              className="group relative bg-white rounded-3xl border border-blue-100
-                         shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden"
+              className="bg-white rounded-2xl border border-gray-200 
+              shadow-sm hover:shadow-md transition overflow-hidden"
             >
-              {/* Top Gradient Bar */}
-              <div className="h-2 bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-500" />
-
-              <div className="p-6 flex flex-col md:flex-row gap-6">
+              <div className="p-5 md:p-6 flex flex-col md:flex-row gap-6">
 
                 {/* Doctor Image */}
-                <div className="w-full md:w-40 flex-shrink-0">
-                  <div className="w-full h-48 md:h-40 rounded-2xl overflow-hidden ring-2 ring-blue-100">
+                <div className="w-full md:w-36 flex-shrink-0">
+                  <div className="w-full h-44 md:h-36 rounded-xl overflow-hidden bg-gray-100">
                     <img
-                      src={item.docData.image || '/default_doctor.png'}
+                      src={item.docData.image || "/default_doctor.png"}
                       alt={item.docData.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 </div>
 
-                {/* Doctor Info */}
-                <div className="flex-1 space-y-2">
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    Dr. {item.docData.name}
-                  </h3>
+                {/* Info */}
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Dr. {item.docData.name}
+                    </h3>
+                    <p className="text-sm text-blue-600 font-medium">
+                      {item.docData.speciality}
+                    </p>
+                  </div>
 
-                  <p className="text-blue-600 font-medium">
-                    {item.docData.speciality}
-                  </p>
-
-                  <div className="text-sm text-slate-600">
-                    <p className="font-medium text-slate-500">Clinic Address</p>
+                  <div className="text-sm text-gray-600">
+                    <p className="font-medium text-gray-500">Clinic Address</p>
                     <p>{item.docData.address?.line1}</p>
                     <p>{item.docData.address?.line2}</p>
                   </div>
 
-                  <div className="flex flex-wrap gap-4 text-sm mt-3">
-                    <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
-                      📅 {slotDateFormat(item.slotDate)} | {item.slotTime}
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <span className="px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700">
+                      {slotDateFormat(item.slotDate)} • {item.slotTime}
                     </span>
 
-                    <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 font-medium">
-                      💳 {currencySymbol}{item.amount}
+                    <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
+                      {currencySymbol}{item.amount}
                     </span>
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex md:flex-col gap-3 justify-end md:items-end">
-                  {!item.cancelled && (
-                    <button className="px-6 py-2 rounded-xl font-semibold text-white
-                      bg-gradient-to-r from-blue-600 to-cyan-500
-                      hover:from-blue-700 hover:to-cyan-600
-                      shadow-md hover:shadow-lg transition">
+                  {!item.cancelled && !item.isCompleted && (
+                    <button className="px-5 py-2 rounded-xl text-sm font-medium
+                    bg-blue-600 text-white hover:bg-blue-700 transition">
                       Pay Online
                     </button>
                   )}
 
-                  {!item.cancelled && (
+                  {!item.cancelled && !item.isCompleted && (
                     <button
                       onClick={() => cancelAppointment(item._id)}
-                      className="px-6 py-2 rounded-xl font-semibold
-                        border border-red-400 text-red-500
-                        hover:bg-red-50 transition">
+                      className="px-5 py-2 rounded-xl text-sm font-medium
+                      border border-red-300 text-red-500 hover:bg-red-50 transition"
+                    >
                       Cancel
                     </button>
                   )}
 
                   {item.cancelled && (
-                    <span className="px-5 py-2 rounded-xl text-sm font-semibold
-                      bg-red-100 text-red-600">
-                      Appointment Cancelled
+                    <span className="px-4 py-1.5 rounded-full text-xs font-medium
+                    bg-red-100 text-red-600">
+                      Cancelled
+                    </span>
+                  )}
+
+                  {item.isCompleted && (
+                    <span className="px-4 py-1.5 rounded-full text-xs font-medium
+                    bg-green-100 text-green-600">
+                      Completed
                     </span>
                   )}
                 </div>
@@ -137,10 +154,9 @@ const MyAppointments = () => {
             </div>
           ))}
         </div>
-
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default MyAppointments
+export default MyAppointments;
