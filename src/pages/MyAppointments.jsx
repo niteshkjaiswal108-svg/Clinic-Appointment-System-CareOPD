@@ -9,12 +9,12 @@ const MyAppointments = () => {
 
   const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"];
 
-  const slotDateFormat = (slotDate) => {
+  const formatDate = (slotDate) => {
     const d = slotDate.split("_");
     return `${d[0]} ${months[Number(d[1])]} ${d[2]}`;
   };
 
-  const getUserAppointments = async () => {
+  const getAppointments = async () => {
     try {
       const { data } = await axios.get(`${backendUrl}/api/user/appointments`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -25,17 +25,16 @@ const MyAppointments = () => {
     }
   };
 
-  const cancelAppointment = async (appointmentId) => {
+  const cancelAppointment = async (id) => {
     try {
       const { data } = await axios.post(
         `${backendUrl}/api/user/cancel-appointment`,
-        { appointmentId },
+        { appointmentId: id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (data.success) {
         toast.success(data.message);
-        getUserAppointments();
+        getAppointments();
       } else toast.error(data.message);
     } catch (err) {
       toast.error(err.message);
@@ -43,43 +42,45 @@ const MyAppointments = () => {
   };
 
   useEffect(() => {
-    if (token) getUserAppointments();
+    if (token) getAppointments();
   }, [token]);
 
   return (
-    <section className="w-full min-h-screen bg-gray-50 pt-28 pb-20">
+    <section className="min-h-screen bg-[#f8fafc] pt-28 pb-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl md:text-4xl font-semibold text-gray-900">
+        <header className="mb-14">
+          <h1 className="text-3xl md:text-4xl font-semibold text-slate-900">
             My Appointments
           </h1>
-          <p className="text-gray-500 mt-2">
-            View and manage your upcoming and past consultations
+          <p className="mt-2 text-slate-500 text-base">
+            Manage your consultations and appointment history
           </p>
-        </div>
+        </header>
 
-        {/* Empty State */}
+        {/* Empty */}
         {appointments.length === 0 && (
-          <div className="bg-white rounded-2xl p-10 text-center border border-gray-200">
-            <p className="text-gray-600 text-lg">No appointments found</p>
+          <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center">
+            <p className="text-slate-600 text-lg">No appointments scheduled</p>
           </div>
         )}
 
-        {/* Appointment Cards */}
-        <div className="space-y-6">
+        {/* Cards */}
+        <div className="space-y-8">
           {appointments.map((item, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl border border-gray-200 
-              shadow-sm hover:shadow-md transition overflow-hidden"
+              className="bg-white rounded-2xl border border-slate-200
+              shadow-[0_8px_30px_rgba(0,0,0,0.04)]
+              hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)]
+              transition-all"
             >
-              <div className="p-5 md:p-6 flex flex-col md:flex-row gap-6">
+              <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
 
                 {/* Doctor Image */}
-                <div className="w-full md:w-36 flex-shrink-0">
-                  <div className="w-full h-44 md:h-36 rounded-xl overflow-hidden bg-gray-100">
+                <div className="w-full md:w-32 flex-shrink-0">
+                  <div className="w-full h-44 md:h-32 rounded-xl overflow-hidden bg-slate-100">
                     <img
                       src={item.docData.image || "/default_doctor.png"}
                       alt={item.docData.name}
@@ -88,65 +89,59 @@ const MyAppointments = () => {
                   </div>
                 </div>
 
-                {/* Info */}
-                <div className="flex-1 space-y-3">
+                {/* Main Info */}
+                <div className="flex-1 space-y-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-slate-900">
                       Dr. {item.docData.name}
                     </h3>
-                    <p className="text-sm text-blue-600 font-medium">
+                    <p className="text-sm font-medium text-blue-600">
                       {item.docData.speciality}
                     </p>
                   </div>
 
-                  <div className="text-sm text-gray-600">
-                    <p className="font-medium text-gray-500">Clinic Address</p>
+                  <div className="text-sm text-slate-600 leading-relaxed">
+                    <p className="font-medium text-slate-500">Clinic Address</p>
                     <p>{item.docData.address?.line1}</p>
                     <p>{item.docData.address?.line2}</p>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <span className="px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700">
-                      {slotDateFormat(item.slotDate)} • {item.slotTime}
-                    </span>
+                  <div className="flex flex-wrap gap-3 pt-1">
+                    <MetaPill>
+                      {formatDate(item.slotDate)} • {item.slotTime}
+                    </MetaPill>
 
-                    <span className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
+                    <MetaPill>
                       {currencySymbol}{item.amount}
-                    </span>
+                    </MetaPill>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex md:flex-col gap-3 justify-end md:items-end">
+                {/* Actions / Status */}
+                <div className="flex md:flex-col gap-3 md:items-end justify-between">
                   {!item.cancelled && !item.isCompleted && (
-                    <button className="px-5 py-2 rounded-xl text-sm font-medium
-                    bg-blue-600 text-white hover:bg-blue-700 transition">
-                      Pay Online
-                    </button>
-                  )}
+                    <>
+                      <button className="px-5 py-2 rounded-xl text-sm font-medium
+                      bg-blue-600 text-white hover:bg-blue-700 transition">
+                        Pay Online
+                      </button>
 
-                  {!item.cancelled && !item.isCompleted && (
-                    <button
-                      onClick={() => cancelAppointment(item._id)}
-                      className="px-5 py-2 rounded-xl text-sm font-medium
-                      border border-red-300 text-red-500 hover:bg-red-50 transition"
-                    >
-                      Cancel
-                    </button>
+                      <button
+                        onClick={() => cancelAppointment(item._id)}
+                        className="px-5 py-2 rounded-xl text-sm font-medium
+                        border border-red-300 text-red-500 hover:bg-red-50 transition"
+                      >
+                        Cancel
+                      </button>
+                    </>
                   )}
 
                   {item.cancelled && (
-                    <span className="px-4 py-1.5 rounded-full text-xs font-medium
-                    bg-red-100 text-red-600">
-                      Cancelled
-                    </span>
+                    <StatusBadge color="red">Cancelled</StatusBadge>
                   )}
 
                   {item.isCompleted && (
-                    <span className="px-4 py-1.5 rounded-full text-xs font-medium
-                    bg-green-100 text-green-600">
-                      Completed
-                    </span>
+                    <StatusBadge color="green">Completed</StatusBadge>
                   )}
                 </div>
 
@@ -160,3 +155,25 @@ const MyAppointments = () => {
 };
 
 export default MyAppointments;
+
+/* ----------------- UI Atoms ----------------- */
+
+const MetaPill = ({ children }) => (
+  <span className="px-3 py-1 rounded-full text-sm
+  bg-slate-100 text-slate-700">
+    {children}
+  </span>
+);
+
+const StatusBadge = ({ children, color }) => {
+  const colors = {
+    red: "bg-red-100 text-red-600",
+    green: "bg-green-100 text-green-600",
+  };
+
+  return (
+    <span className={`px-4 py-1.5 rounded-full text-xs font-medium ${colors[color]}`}>
+      {children}
+    </span>
+  );
+};
